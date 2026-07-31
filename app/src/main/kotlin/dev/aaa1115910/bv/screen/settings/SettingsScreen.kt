@@ -38,6 +38,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import dev.aaa1115910.bv.R
 import dev.aaa1115910.bv.screen.settings.content.AboutSetting
+import dev.aaa1115910.bv.screen.settings.content.AccountSetting
 import dev.aaa1115910.bv.screen.settings.content.AudioVideoSetting
 import dev.aaa1115910.bv.screen.settings.content.InfoSetting
 import dev.aaa1115910.bv.screen.settings.content.NetworkSetting
@@ -156,6 +157,7 @@ enum class SettingsMenuNavItem(private val strRes: Int) {
     Other(R.string.settings_item_other),
     Storage(R.string.settings_item_storage),
     Network(R.string.settings_item_network),
+    Account(R.string.settings_item_account),
     Info(R.string.settings_item_info),
     About(R.string.settings_item_about);
 
@@ -184,6 +186,7 @@ fun SettingContent(
                 SettingsMenuNavItem.About -> AboutSetting()
                 SettingsMenuNavItem.Other -> OtherSetting()
                 SettingsMenuNavItem.Network -> NetworkSetting()
+                SettingsMenuNavItem.Account -> AccountSetting()
                 SettingsMenuNavItem.PlayerType -> PlayerTypeSetting()
                 SettingsMenuNavItem.UI -> UISetting()
                 SettingsMenuNavItem.Storage -> StorageSetting()

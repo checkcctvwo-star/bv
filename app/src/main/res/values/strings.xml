@@ -237,6 +237,7 @@
     <string name="settings_item_codec">默认视频编码</string>
     <string name="settings_item_info">设备信息</string>
     <string name="settings_item_network">网络设置</string>
+    <string name="settings_item_account">账号与方向</string>
     <string name="settings_item_other">更多设置</string>
     <string name="settings_item_player_type">播放器内核</string>
     <string name="settings_item_audio_video_settings">播放设置</string>
