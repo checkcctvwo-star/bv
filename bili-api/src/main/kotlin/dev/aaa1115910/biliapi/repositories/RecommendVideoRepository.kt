@@ -2,6 +2,8 @@ package dev.aaa1115910.biliapi.repositories
 
 import bilibili.app.show.v1.PopularGrpcKt
 import bilibili.app.show.v1.popularResultReq
+import dev.aaa1115910.biliapi.account.AccountResolver
+import dev.aaa1115910.biliapi.account.AccountType
 import dev.aaa1115910.biliapi.entity.ApiType
 import dev.aaa1115910.biliapi.entity.home.RecommendData
 import dev.aaa1115910.biliapi.entity.home.RecommendPage
@@ -14,7 +16,8 @@ import org.koin.core.annotation.Single
 @Single
 class RecommendVideoRepository(
     private val authRepository: AuthRepository,
-    private val channelRepository: ChannelRepository
+    private val channelRepository: ChannelRepository,
+    private val accountResolver: AccountResolver
 ) {
     private val popularStub
         get() = runCatching {
@@ -25,12 +28,13 @@ class RecommendVideoRepository(
         page: PopularVideoPage,
         preferApiType: ApiType = ApiType.Web
     ): PopularVideoData {
-        return when (preferApiType) {
+        val apiType = accountResolver.effectiveApiType(AccountType.RECOMMEND, preferApiType)
+        return when (apiType) {
             ApiType.Web -> {
                 val response = BiliHttpApi.getPopularVideoData(
                     pageSize = page.nextWebPageSize,
                     pageNumber = page.nextWebPageNumber,
-                    sessData = authRepository.sessionData ?: ""
+                    sessData = accountResolver.resolve(AccountType.RECOMMEND).sessData
                 ).getResponseData()
                 val list = response.list.map { UgcItem.fromVideoInfo(it) }
                 val nextPage = PopularVideoPage(
@@ -68,23 +72,25 @@ class RecommendVideoRepository(
         page: RecommendPage = RecommendPage(),
         preferApiType: ApiType = ApiType.Web
     ): RecommendData {
-        val items = when (preferApiType) {
+        val auth = accountResolver.resolve(AccountType.RECOMMEND)
+        val apiType = accountResolver.effectiveApiType(AccountType.RECOMMEND, preferApiType)
+        val items = when (apiType) {
             ApiType.Web -> BiliHttpApi.getFeedRcmd(
                 idx = page.nextWebIdx,
-                sessData = authRepository.sessionData
+                sessData = auth.sessData.ifEmpty { null }
             )
                 .getResponseData().item
                 .map { UgcItem.fromRcmdItem(it) }
 
             ApiType.App -> BiliHttpApi.getFeedIndex(
                 idx = page.nextAppIdx,
-                accessKey = authRepository.accessToken
+                accessKey = auth.accessToken.ifEmpty { null }
             )
                 .getResponseData().items
                 .filter { it.cardGoto == "av" }
                 .map { UgcItem.fromRcmdItem(it) }
         }
-        val nextPage = when (preferApiType) {
+        val nextPage = when (apiType) {
             ApiType.Web -> RecommendPage(
                 nextWebIdx = page.nextWebIdx + 1
             )
