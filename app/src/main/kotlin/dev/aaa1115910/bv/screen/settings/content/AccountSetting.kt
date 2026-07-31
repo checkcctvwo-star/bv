@@ -39,7 +39,6 @@ import kotlinx.coroutines.withContext
 
 private data class DirectionCard(
     val title: String,
-    val currentUid: Long,
     val currentName: String,
     val isAnonymous: Boolean
 )
@@ -119,11 +118,12 @@ fun AccountSetting(
 
 @Composable
 private fun DirectionGrid(users: List<UserDB>, onPick: (String) -> Unit) {
+    val context = LocalContext.current
     val cards = listOf(
-        DirectionCard("主账号", Prefs.uid, users.firstOrNull { it.uid == Prefs.uid }?.username ?: "未登录", Prefs.uid == 0L),
-        DirectionCard("记录观看", Prefs.accountHeartbeatUid, users.firstOrNull { it.uid == Prefs.accountHeartbeatUid }?.username ?: "匿名", Prefs.accountHeartbeatUid == 0L),
-        DirectionCard("推荐", Prefs.accountRecommendUid, users.firstOrNull { it.uid == Prefs.accountRecommendUid }?.username ?: "匿名", Prefs.accountRecommendUid == 0L),
-        DirectionCard("取流", Prefs.accountVideoUid, users.firstOrNull { it.uid == Prefs.accountVideoUid }?.username ?: "匿名", Prefs.accountVideoUid == 0L)
+        DirectionCard("主账号", users.firstOrNull { it.uid == Prefs.uid }?.username ?: "未登录", Prefs.uid == 0L),
+        DirectionCard("记录观看", users.firstOrNull { it.uid == Prefs.accountHeartbeatUid }?.username ?: "匿名", Prefs.accountHeartbeatUid == 0L),
+        DirectionCard("推荐", users.firstOrNull { it.uid == Prefs.accountRecommendUid }?.username ?: "匿名", Prefs.accountRecommendUid == 0L),
+        DirectionCard("取流", users.firstOrNull { it.uid == Prefs.accountVideoUid }?.username ?: "匿名", Prefs.accountVideoUid == 0L)
     )
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -139,7 +139,13 @@ private fun DirectionGrid(users: List<UserDB>, onPick: (String) -> Unit) {
                     .padding(8.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .border(2.dp, MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp)),
-                onClick = { onPick(card.title) }
+                onClick = {
+                    if (card.title == "主账号") {
+                        context.startActivity(Intent(context, UserSwitchActivity::class.java))
+                    } else {
+                        onPick(card.title)
+                    }
+                }
             )
         }
     }
