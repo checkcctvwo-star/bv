@@ -1,5 +1,10 @@
 package dev.aaa1115910.biliapi.repositories
 
+import dev.aaa1115910.biliapi.account.AccountModeProvider
+import dev.aaa1115910.biliapi.account.AccountResolver
+import dev.aaa1115910.biliapi.account.AccountType
+import dev.aaa1115910.biliapi.account.AuthDataFetcher
+import dev.aaa1115910.biliapi.account.ResolvedAuth
 import dev.aaa1115910.biliapi.entity.ApiType
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -27,7 +32,19 @@ class HistoryRepositoryTest {
 
     private val authRepository = AuthRepository()
     private val channelRepository = ChannelRepository()
-    private val historyRepository = HistoryRepository(authRepository, channelRepository)
+    private val accountResolver = AccountResolver(
+        authRepository = authRepository,
+        modeProvider = object : AccountModeProvider {
+            override val isDetailed = false
+            override val mainUid = 0L
+            override val anonymousBuvid3 = ""
+            override fun uidFor(type: AccountType) = null
+        },
+        fetcher = object : AuthDataFetcher {
+            override suspend fun fetch(uid: Long): ResolvedAuth? = null
+        }
+    )
+    private val historyRepository = HistoryRepository(authRepository, channelRepository, accountResolver)
 
     init {
         channelRepository.initDefaultChannel(

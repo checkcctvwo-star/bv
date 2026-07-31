@@ -3,6 +3,8 @@ package dev.aaa1115910.biliapi.repositories
 import bilibili.app.interfaces.v1.HistoryGrpcKt
 import bilibili.app.interfaces.v1.cursor
 import bilibili.app.interfaces.v1.cursorV2Req
+import dev.aaa1115910.biliapi.account.AccountResolver
+import dev.aaa1115910.biliapi.account.AccountType
 import dev.aaa1115910.biliapi.entity.ApiType
 import dev.aaa1115910.biliapi.entity.user.HistoryData
 import dev.aaa1115910.biliapi.http.BiliHttpApi
@@ -11,7 +13,8 @@ import org.koin.core.annotation.Single
 @Single
 class HistoryRepository(
     private val authRepository: AuthRepository,
-    private val channelRepository: ChannelRepository
+    private val channelRepository: ChannelRepository,
+    private val accountResolver: AccountResolver
 ) {
     private val historyStub
         get() = runCatching {
@@ -22,11 +25,13 @@ class HistoryRepository(
         cursor: Long,
         preferApiType: ApiType = ApiType.Web
     ): HistoryData {
-        return when (preferApiType) {
+        val auth = accountResolver.resolve(AccountType.HEARTBEAT)
+        val apiType = accountResolver.effectiveApiType(AccountType.HEARTBEAT, preferApiType)
+        return when (apiType) {
             ApiType.Web -> {
                 val data = BiliHttpApi.getHistories(
                     viewAt = cursor,
-                    sessData = authRepository.sessionData!!,
+                    sessData = auth.sessData,
                 ).getResponseData()
                 HistoryData.fromHistoryResponse(data)
             }
