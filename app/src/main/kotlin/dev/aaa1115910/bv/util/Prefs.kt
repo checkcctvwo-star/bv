@@ -86,6 +86,12 @@ object Prefs {
     var buvid by pref(PrefKeys.prefBuvidKey, "")
     var buvid3 by pref(PrefKeys.prefBuvid3Key, "")
 
+    // 账号方向（按场景切换）
+    var accountModeEnabled by pref(PrefKeys.prefAccountModeEnabledKey, false)
+    var accountHeartbeatUid by pref(PrefKeys.prefAccountHeartbeatUidKey, 0L)
+    var accountRecommendUid by pref(PrefKeys.prefAccountRecommendUidKey, 0L)
+    var accountVideoUid by pref(PrefKeys.prefAccountVideoUidKey, 0L)
+
     // =========================================================================
     // 网络 & API
     // =========================================================================
@@ -336,6 +342,12 @@ private object PrefKeys {
     val prefRefreshTokenKey = stringPreferencesKey("refresh_token")
     val prefBuvidKey = stringPreferencesKey("random_buvid")
     val prefBuvid3Key = stringPreferencesKey("random_buvid3")
+
+    // 账号方向
+    val prefAccountModeEnabledKey = booleanPreferencesKey("account_mode_enabled")
+    val prefAccountHeartbeatUidKey = longPreferencesKey("account_hb_uid")
+    val prefAccountRecommendUidKey = longPreferencesKey("account_rc_uid")
+    val prefAccountVideoUidKey = longPreferencesKey("account_vi_uid")
 
     // 网络 & API
     val prefApiTypeKey = intPreferencesKey("api_type")
