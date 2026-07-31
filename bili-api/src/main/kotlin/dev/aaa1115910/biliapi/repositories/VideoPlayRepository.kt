@@ -6,6 +6,8 @@ import bilibili.community.service.dm.v1.DMGrpcKt
 import bilibili.community.service.dm.v1.dmViewReq
 import bilibili.pgc.gateway.player.v2.playViewReq
 import bilibili.playershared.videoVod
+import dev.aaa1115910.biliapi.account.AccountResolver
+import dev.aaa1115910.biliapi.account.AccountType
 import dev.aaa1115910.biliapi.entity.ApiType
 import dev.aaa1115910.biliapi.entity.CodeType
 import dev.aaa1115910.biliapi.entity.PlayData
@@ -28,7 +30,8 @@ import bilibili.pgc.gateway.player.v2.PlayURLGrpcKt as PgcPlayURLGrpcKt
 @Single
 class VideoPlayRepository(
     private val authRepository: AuthRepository,
-    private val channelRepository: ChannelRepository
+    private val channelRepository: ChannelRepository,
+    private val accountResolver: AccountResolver
 ) {
     private val playerStub
         get() = runCatching {
@@ -54,7 +57,9 @@ class VideoPlayRepository(
         cid: Long,
         preferApiType: ApiType = ApiType.Web
     ): PlayData {
-        return when (preferApiType) {
+        val auth = accountResolver.resolve(AccountType.VIDEO)
+        val apiType = accountResolver.effectiveApiType(AccountType.VIDEO, preferApiType)
+        return when (apiType) {
             ApiType.Web -> {
                 val playUrlData = BiliHttpApi.getVideoPlayUrl(
                     av = aid,
@@ -63,8 +68,8 @@ class VideoPlayRepository(
                     qn = 127,
                     fnver = 0,
                     fourk = 1,
-                    sessData = authRepository.sessionData,
-                    dedeUserID = authRepository.mid
+                    sessData = auth.sessData.ifEmpty { null },
+                    dedeUserID = auth.mid.takeIf { it != 0L }
                 ).getResponseData()
                 PlayData.fromPlayUrlData(playUrlData)
             }
@@ -122,8 +127,10 @@ class VideoPlayRepository(
         enableProxy: Boolean = false,
         proxyArea: String = ""
     ): PlayData {
+        val auth = accountResolver.resolve(AccountType.VIDEO)
+        val apiType = accountResolver.effectiveApiType(AccountType.VIDEO, preferApiType)
         println("get pgc play data: [aid=$aid, cid=$cid, epid=$epid, preferCodec=$preferCodec, preferApiType=$preferApiType, enableProxy=$enableProxy, proxyArea=$proxyArea]")
-        return when (preferApiType) {
+        return when (apiType) {
             ApiType.Web -> {
                 val playUrlData = if (enableProxy) {
                     BiliHttpProxyApi.getPgcVideoPlayUrlV2(
@@ -134,7 +141,7 @@ class VideoPlayRepository(
                         qn = 127,
                         fnver = 0,
                         fourk = 1,
-                        sessData = authRepository.sessionData
+                        sessData = auth.sessData.ifEmpty { null }
                     )
                 } else {
                     BiliHttpApi.getPgcVideoPlayUrlV2(
@@ -145,7 +152,7 @@ class VideoPlayRepository(
                         qn = 127,
                         fnver = 0,
                         fourk = 1,
-                        sessData = authRepository.sessionData
+                        sessData = auth.sessData.ifEmpty { null }
                     )
                 }.getResponseData()
 
@@ -245,7 +252,9 @@ class VideoPlayRepository(
         seasonId: Int? = null,
         preferApiType: ApiType = ApiType.Web
     ) {
-        val result = when (preferApiType) {
+        val auth = accountResolver.resolve(AccountType.HEARTBEAT)
+        val apiType = accountResolver.effectiveApiType(AccountType.HEARTBEAT, preferApiType)
+        val result = when (apiType) {
             ApiType.Web -> BiliHttpApi.sendHeartbeat(
                 avid = aid,
                 cid = cid,
@@ -254,8 +263,8 @@ class VideoPlayRepository(
                 subType = subType,
                 epid = epid,
                 sid = seasonId,
-                csrf = authRepository.biliJct,
-                sessData = authRepository.sessionData ?: ""
+                csrf = auth.biliJct.ifEmpty { null },
+                sessData = auth.sessData
             )
 
             ApiType.App -> BiliHttpApi.sendHeartbeat(
@@ -266,7 +275,7 @@ class VideoPlayRepository(
                 subType = subType,
                 epid = epid,
                 sid = seasonId,
-                accessKey = authRepository.accessToken ?: ""
+                accessKey = auth.accessToken.ifEmpty { null }
             )
         }
         println("send heartbeat result: $result")
