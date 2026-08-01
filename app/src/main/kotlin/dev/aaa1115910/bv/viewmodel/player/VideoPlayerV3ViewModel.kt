@@ -540,6 +540,7 @@ class VideoPlayerV3ViewModel(
 
     fun playPrevRecommend() {
         viewModelScope.launch(Dispatchers.IO) {
+            ensureQueue()
             val ref = feedQueue?.prev() ?: return@launch
             playNewVideo(
                 VideoListItem(

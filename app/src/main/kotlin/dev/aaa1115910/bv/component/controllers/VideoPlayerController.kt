@@ -462,12 +462,12 @@ fun VideoPlayerController(
                 return true
             }
 
-            Key.MediaNext -> {
+            Key(87) -> {
                 onMediaNext()
                 return true
             }
 
-            Key.MediaPrevious -> {
+            Key(88) -> {
                 onMediaPrevious()
                 return true
             }
