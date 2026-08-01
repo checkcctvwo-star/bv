@@ -75,6 +75,7 @@ fun AccountSetting(
                 headlineContent = { Text("账号池：${users.size} 个账号") },
                 supportingContent = { Text("扫码添加 / 管理已登录账号") },
                 modifier = Modifier.padding(horizontal = 12.dp),
+                selected = false,
                 onClick = {
                     context.startActivity(Intent(context, UserSwitchActivity::class.java))
                     refreshUsers()
@@ -139,6 +140,7 @@ private fun DirectionGrid(users: List<UserDB>, onPick: (String) -> Unit) {
                     .padding(8.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .border(2.dp, MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp)),
+                selected = false,
                 onClick = {
                     if (card.title == "主账号") {
                         context.startActivity(Intent(context, UserSwitchActivity::class.java))
