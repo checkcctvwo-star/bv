@@ -12,7 +12,6 @@ import org.koin.core.annotation.Single
 
 @Single
 class HistoryRepository(
-    private val authRepository: AuthRepository,
     private val channelRepository: ChannelRepository,
     private val accountResolver: AccountResolver
 ) {

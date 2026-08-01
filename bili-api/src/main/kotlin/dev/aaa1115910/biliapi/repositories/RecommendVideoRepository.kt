@@ -15,7 +15,6 @@ import org.koin.core.annotation.Single
 
 @Single
 class RecommendVideoRepository(
-    private val authRepository: AuthRepository,
     private val channelRepository: ChannelRepository,
     private val accountResolver: AccountResolver
 ) {

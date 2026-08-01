@@ -462,6 +462,8 @@ fun VideoPlayerController(
                 return true
             }
 
+            // v1 limitation: not yet wired to the "player custom shortcut" system.
+            // Hardcoded to MEDIA_NEXT(87) / MEDIA_PREVIOUS(88); can be replaced later.
             Key(87) -> {
                 onMediaNext()
                 return true

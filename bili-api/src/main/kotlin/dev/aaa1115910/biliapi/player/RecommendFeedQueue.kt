@@ -1,5 +1,8 @@
 package dev.aaa1115910.biliapi.player
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 class RecommendFeedQueue(
     private val source: Source,
     private val threshold: Int = 5,
@@ -13,22 +16,24 @@ class RecommendFeedQueue(
 
     private val buffer = ArrayDeque<VideoRef>()
     private val history = ArrayDeque<VideoRef>()
+    private val mutex = Mutex()
     private var pageIdx = 0
     private var exhausted = false
 
-    suspend fun next(): VideoRef? {
+    suspend fun next(): VideoRef? = mutex.withLock {
         if (buffer.isEmpty() && !fetchMore()) return null
         val item = buffer.removeFirst()
         history.addLast(item)
         if (buffer.size < threshold) fetchMore()
-        return item
+        item
     }
 
-    fun prev(): VideoRef? {
+    suspend fun prev(): VideoRef? = mutex.withLock {
         if (history.size < 2) return null
-        history.removeLast()  // 移除当前
+        val current = history.removeLast()
         val prev = history.removeLast()
-        buffer.addFirst(prev)  // 重新放回缓冲头部避免丢失
+        history.addLast(prev)       // prev becomes current
+        buffer.addFirst(current)    // current goes back to buffer so next() can return to it
         return prev
     }
 

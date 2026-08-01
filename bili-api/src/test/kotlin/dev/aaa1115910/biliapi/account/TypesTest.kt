@@ -23,4 +23,24 @@ class TypesTest {
         assertEquals(0L, anon.mid)
         assertEquals("", anon.buvid3)
     }
+
+    @Test
+    fun `ResolvedAuth isAnonymous is true when both sessData and accessToken are empty`() {
+        assertTrue(ResolvedAuth(sessData = "", accessToken = "").isAnonymous)
+    }
+
+    @Test
+    fun `ResolvedAuth isAnonymous is false when sessData is present but accessToken is empty`() {
+        assertEquals(false, ResolvedAuth(sessData = "abc", accessToken = "").isAnonymous)
+    }
+
+    @Test
+    fun `ResolvedAuth isAnonymous is false when accessToken is present but sessData is empty`() {
+        assertEquals(false, ResolvedAuth(sessData = "", accessToken = "xyz").isAnonymous)
+    }
+
+    @Test
+    fun `ResolvedAuth isAnonymous is false when both sessData and accessToken are present`() {
+        assertEquals(false, ResolvedAuth(sessData = "abc", accessToken = "xyz").isAnonymous)
+    }
 }

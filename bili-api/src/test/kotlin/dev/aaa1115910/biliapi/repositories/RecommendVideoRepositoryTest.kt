@@ -47,7 +47,7 @@ class RecommendVideoRepositoryTest {
         }
     )
     private val recommendVideoRepository =
-        RecommendVideoRepository(authRepository, channelRepository, accountResolver)
+        RecommendVideoRepository(channelRepository, accountResolver)
 
     init {
         channelRepository.initDefaultChannel(

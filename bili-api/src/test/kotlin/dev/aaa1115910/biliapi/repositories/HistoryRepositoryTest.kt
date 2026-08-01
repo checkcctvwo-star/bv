@@ -44,7 +44,7 @@ class HistoryRepositoryTest {
             override suspend fun fetch(uid: Long): ResolvedAuth? = null
         }
     )
-    private val historyRepository = HistoryRepository(authRepository, channelRepository, accountResolver)
+    private val historyRepository = HistoryRepository(channelRepository, accountResolver)
 
     init {
         channelRepository.initDefaultChannel(
