@@ -8,6 +8,7 @@ import dev.aaa1115910.biliapi.util.convertStringTimeToSeconds
 
 data class UgcItem(
     val aid: Long,
+    val cid: Long? = null,
     val bvid: String = "",
     val title: String,
     val cover: String,
@@ -23,6 +24,7 @@ data class UgcItem(
         fun fromRcmdItem(rcmdItem: RcmdIndexData.RcmdItem) =
             UgcItem(
                 aid = rcmdItem.args.aid ?: 0,
+                cid = rcmdItem.playerArgs?.cid,
                 title = rcmdItem.title!!,
                 cover = rcmdItem.cover!!,
                 author = rcmdItem.args.upName ?: "",

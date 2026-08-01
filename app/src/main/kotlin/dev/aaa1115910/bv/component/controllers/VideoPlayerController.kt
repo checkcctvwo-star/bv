@@ -95,6 +95,8 @@ fun VideoPlayerController(
     onSubtitleChange: (Subtitle) -> Unit,
     onSubtitleSettingChange: (SubtitleSettingAction) -> Unit,
     onRelatedVideoClicked: (VideoCardData) -> Unit,
+    onMediaNext: () -> Unit = {},
+    onMediaPrevious: () -> Unit = {},
 
     content: @Composable () -> Unit
 ) {
@@ -457,6 +459,16 @@ fun VideoPlayerController(
 
             Key.MediaPause -> {
                 if (isPlaying) onPause()
+                return true
+            }
+
+            Key.MediaNext -> {
+                onMediaNext()
+                return true
+            }
+
+            Key.MediaPrevious -> {
+                onMediaPrevious()
                 return true
             }
         }

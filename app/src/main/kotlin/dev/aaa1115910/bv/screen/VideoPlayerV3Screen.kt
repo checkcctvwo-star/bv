@@ -220,6 +220,12 @@ fun VideoPlayerV3Screen(
                 )
             }
         },
+        onMediaNext = {
+            playerViewModel.playNextRecommend()
+        },
+        onMediaPrevious = {
+            playerViewModel.playPrevRecommend()
+        },
     ) {
         Box(
             modifier = Modifier.background(Color.Black),

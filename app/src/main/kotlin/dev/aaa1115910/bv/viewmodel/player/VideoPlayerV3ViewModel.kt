@@ -18,9 +18,12 @@ import com.kuaishou.akdanmaku.render.SimpleRenderer
 import com.kuaishou.akdanmaku.ui.DanmakuPlayer
 import dev.aaa1115910.biliapi.entity.ApiType
 import dev.aaa1115910.biliapi.entity.PlayData
+import dev.aaa1115910.biliapi.entity.home.RecommendPage
 import dev.aaa1115910.biliapi.entity.video.HeartbeatVideoType
 import dev.aaa1115910.biliapi.entity.video.VideoPage
 import dev.aaa1115910.biliapi.http.BiliHttpApi
+import dev.aaa1115910.biliapi.player.RecommendFeedQueue
+import dev.aaa1115910.biliapi.repositories.RecommendVideoRepository
 import dev.aaa1115910.biliapi.repositories.VideoPlayRepository
 import dev.aaa1115910.bilisubtitle.SubtitleParser
 import dev.aaa1115910.bv.BVApp
@@ -82,7 +85,8 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class VideoPlayerV3ViewModel(
     private val videoInfoRepository: VideoInfoRepository,
-    private val videoPlayRepository: VideoPlayRepository
+    private val videoPlayRepository: VideoPlayRepository,
+    private val recommendVideoRepository: RecommendVideoRepository
 ) : ViewModel() {
     private val logger = KotlinLogging.logger { }
 
@@ -114,6 +118,8 @@ class VideoPlayerV3ViewModel(
     private var backToStartCountdownJob: Job? = null
     private var playNextCountdownJob: Job? = null
     private var previewTipCountdownJob: Job? = null
+
+    private var feedQueue: RecommendFeedQueue? = null
 
     private val videoPlayerListener = object : VideoPlayerListener {
         override fun onError(error: Exception) {
@@ -474,6 +480,11 @@ class VideoPlayerV3ViewModel(
                 }
             }
 
+            ActionAfterPlayItems.PlayRecommend -> {
+                playNextRecommend()
+                return
+            }
+
             ActionAfterPlayItems.PlayNext -> {
                 /* 继续执行 */
             }
@@ -489,6 +500,54 @@ class VideoPlayerV3ViewModel(
             viewModelScope.launch {
                 _uiEffect.emit(PlayerUiEffect.FinishActivity)
             }
+        }
+    }
+
+    private fun ensureQueue() {
+        if (feedQueue != null) return
+        feedQueue = RecommendFeedQueue(object : RecommendFeedQueue.Source {
+            override suspend fun fetchPage(pageIdx: Int): List<RecommendFeedQueue.VideoRef> {
+                val data = runCatching {
+                    recommendVideoRepository.getRecommendVideos(
+                        page = RecommendPage(nextWebIdx = pageIdx),
+                        preferApiType = ApiType.Web
+                    )
+                }.getOrNull() ?: return emptyList()
+                return data.items.map {
+                    RecommendFeedQueue.VideoRef(
+                        aid = it.aid,
+                        cid = it.cid ?: it.aid,
+                        title = it.title
+                    )
+                }
+            }
+        })
+    }
+
+    fun playNextRecommend() {
+        viewModelScope.launch(Dispatchers.IO) {
+            ensureQueue()
+            val ref = feedQueue?.next() ?: return@launch
+            playNewVideo(
+                VideoListItem(
+                    aid = ref.aid,
+                    cid = ref.cid,
+                    title = ref.title
+                )
+            )
+        }
+    }
+
+    fun playPrevRecommend() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ref = feedQueue?.prev() ?: return@launch
+            playNewVideo(
+                VideoListItem(
+                    aid = ref.aid,
+                    cid = ref.cid,
+                    title = ref.title
+                )
+            )
         }
     }
 
