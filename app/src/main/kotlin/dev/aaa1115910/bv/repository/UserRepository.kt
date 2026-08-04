@@ -148,11 +148,25 @@ class UserRepository(
     }
 
     suspend fun updateAvatar() {
-        val user = db.userDao().findUserByUid(uid)
+        val targetUid = uid
+        val user = db.userDao().findUserByUid(targetUid)
         user?.let {
             runCatching {
+                // 用 UserRepository 自身持有的 sessData（reloadFromPrefs 写入的最新值），
+                // 而非 Prefs.sessData：saveToPrefs 将多个字段分次异步写盘，期间 DataStore
+                // collector 会用"部分字段仍为旧值"的中间快照覆盖内存缓存，把 Prefs.sessData
+                // 回退成上一个账号的值，导致用错 cookie 拉到旧账号的名字写进新账号记录。
                 val responseData =
-                    BiliHttpApi.getUserSelfInfo(sessData = Prefs.sessData).getResponseData()
+                    BiliHttpApi.getUserSelfInfo(sessData = sessData).getResponseData()
+                // 防御：仅当拉到的 mid 与目标 uid 一致才写库，避免任何情况下
+                // 用错账号 cookie 把 A 的名字写进 B 的记录。
+                if (responseData.mid != targetUid) {
+                    logger.info {
+                        "Skip updating avatar: fetched mid ${responseData.mid} != target uid $targetUid " +
+                            "(sessData may belong to another account)"
+                    }
+                    return@runCatching
+                }
                 logger.fInfo { "Updating user name and avatar" }
                 username = responseData.name
                 avatar = responseData.face
