@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,9 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.aaa1115910.bv.component.HomeTopNavItem
 import dev.aaa1115910.bv.component.TopNav
 import dev.aaa1115910.bv.screen.main.home.DynamicsScreen
@@ -51,6 +55,7 @@ fun HomeContent(
     userViewModel: UserViewModel = koinViewModel()
 ) {
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
     val logger = KotlinLogging.logger("HomeContent")
 
     val firstTab = remember { Prefs.firstHomeTopNavItem }
@@ -92,6 +97,27 @@ fun HomeContent(
             //logout
             userViewModel.clearUserInfo()
         }
+    }
+
+    // 账号方向指派变化时，回到首页自动刷新推荐/热门（两者均用 RECOMMEND 方向账号）
+    var lastRecommendAccount by remember {
+        mutableStateOf(Prefs.accountRecommendUid to Prefs.accountModeEnabled)
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val current = Prefs.accountRecommendUid to Prefs.accountModeEnabled
+                if (current != lastRecommendAccount) {
+                    lastRecommendAccount = current
+                    recommendViewModel.clearData()
+                    scope.launch(Dispatchers.IO) { recommendViewModel.loadMore() }
+                    popularViewModel.clearData()
+                    scope.launch(Dispatchers.IO) { popularViewModel.loadMore() }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Scaffold(

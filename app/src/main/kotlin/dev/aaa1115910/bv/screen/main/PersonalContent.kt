@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,9 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.aaa1115910.bv.component.PersonalTopNavItem
 import dev.aaa1115910.bv.component.TopNav
 import dev.aaa1115910.bv.screen.user.FavoriteScreen
@@ -49,6 +53,7 @@ fun PersonalContent(
     followingSeasonViewModel: FollowingSeasonViewModel = koinViewModel()
 ) {
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var focusOnContent by remember { mutableStateOf(false) }
 
@@ -104,6 +109,25 @@ fun PersonalContent(
         scope.launch(Dispatchers.IO) {
             followingSeasonViewModel.loadMore()
         }
+    }
+
+    // 账号方向指派变化时，回到个人页自动刷新历史（用 HEARTBEAT 方向账号）
+    var lastHeartbeatAccount by remember {
+        mutableStateOf(Prefs.accountHeartbeatUid to Prefs.accountModeEnabled)
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val current = Prefs.accountHeartbeatUid to Prefs.accountModeEnabled
+                if (current != lastHeartbeatAccount) {
+                    lastHeartbeatAccount = current
+                    historyViewModel.clearData()
+                    scope.launch(Dispatchers.IO) { historyViewModel.update() }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
 
